@@ -40,7 +40,7 @@ def get_user_by_id(db: Session, user_id: int):
 # crete new user 
 def create_new_user(db: Session, user: MyUser):
     hashed_password = pwd_context.hash(user.password)
-    new_user = UserModel.User(email=user.email, password=hashed_password, role= UserRole.USER, id = str(uuid.uuid4()))
+    new_user = UserModel.User(name=user.name, email=user.email, password=hashed_password, role= UserRole.USER, id = str(uuid.uuid4()))
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -54,6 +54,13 @@ def read_all_user(db: Session, skip: int, limit: int):
 # =====================> login/logout <============================
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
+
+def signup_user(db: Session, user: MyUser):
+    member = get_user_by_email(db, user.email)
+    if member:
+        return False
+    create_new_user(db, user)
+    return True
 
 def authenticate_user(db: Session, user: MyUser):
     member = get_user_by_email(db, user.email)

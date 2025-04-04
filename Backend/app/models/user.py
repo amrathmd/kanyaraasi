@@ -12,6 +12,7 @@ class User(Base):
 	email = Column(String, unique=True)
 	password = Column(String)
 	role = Column(Enum(UserRole), default=UserRole.USER)
+	name = Column(String)
 
 	def __repr__(self):
 		return f"{self.email}"

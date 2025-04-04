@@ -7,7 +7,7 @@ from datetime import timedelta
 from sqlalchemy.orm import Session
 
 # import
-from app.schemas.user import MyUser, Token
+from app.schemas.user import Login, MyUser, Token
 from app.core.dependencies import get_db
 from app.core.settings import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS
 from app.api.endpoints.user import functions as user_functions
@@ -19,7 +19,7 @@ auth_module = APIRouter()
 # getting access token for login 
 @auth_module.post("/login", response_model= Token)
 async def login_for_access_token(
-    user: MyUser,
+    user: Login,
     db: Session = Depends(get_db)
 ) -> Token:
     member = user_functions.authenticate_user(db, user=user)
@@ -35,6 +35,13 @@ async def login_for_access_token(
     )
 
     return Token(access_token=access_token, token_type="bearer",role=member.role)
+
+@auth_module.post("/signup")
+async def signup(
+        user: MyUser,
+        db: Session = Depends(get_db)
+) -> bool:
+    return user_functions.signup_user(db, user)
 
 # get curren user 
 @auth_module.get('/user/profile', response_model= MyUser)
