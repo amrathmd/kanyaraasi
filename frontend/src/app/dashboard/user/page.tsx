@@ -5,6 +5,7 @@ import { Document } from '@/types';
 import { toast } from 'react-hot-toast';
 import Header from '@/components/Header';
 import { DocumentIcon, ArrowUpTrayIcon, XMarkIcon, CheckCircleIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import { getPresignedUrl, updateDocumentStatus, uploadToS3 } from '@/services/api';
 
 export default function UserDashboard() {
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -14,6 +15,8 @@ export default function UserDashboard() {
   const [balance, setBalance] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingFiles, setUploadingFiles] = useState<{ [key: string]: boolean }>({});
+  const [uploadStatus, setUploadStatus] = useState<{ [key: string]: 'idle' | 'uploading' | 'success' | 'failed' }>({});
 
   useEffect(() => {
     // In a real app, you would fetch the user's name and balance from an API
@@ -58,26 +61,35 @@ export default function UserDashboard() {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleUpload = async () => {
-    if (selectedFiles.length === 0) {
-      toast.error('Please select at least one file');
+  const handleUpload = async (file: File) => {
+    if (!file) {
+      toast.error('Please select a file');
       return;
     }
 
     try {
-      // Create a FormData object for each file
-      for (const file of selectedFiles) {
-        const formData = new FormData();
-        formData.append('file', file);
-        
-        // TODO: Implement file upload API call
-        // await uploadFile(formData);
-      }
+      setUploadStatus(prev => ({ ...prev, [file.name]: 'uploading' }));
       
-      toast.success(`${selectedFiles.length} file(s) uploaded successfully`);
-      setSelectedFiles([]);
+      // Step 1: Get presigned URL
+      const { document_code, presigned_url } = await getPresignedUrl(file.type);
+      
+      // Step 2: Upload to S3 using presigned URL
+      await uploadToS3(file, presigned_url);
+      
+      // Step 3: Update document status
+      await updateDocumentStatus(document_code);
+      
+      toast.success(`${file.name} uploaded successfully`);
+      setUploadStatus(prev => ({ ...prev, [file.name]: 'success' }));
+      
+      // Remove the file after showing success state
+      setTimeout(() => {
+        setSelectedFiles(prev => prev.filter(f => f.name !== file.name));
+      }, 2000);
     } catch (error) {
-      toast.error('Failed to upload files');
+      console.error('Upload error:', error);
+      toast.error(`Failed to upload ${file.name}`);
+      setUploadStatus(prev => ({ ...prev, [file.name]: 'failed' }));
     }
   };
 
@@ -167,14 +179,48 @@ export default function UserDashboard() {
                               <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
                             </div>
                           </div>
-                          <div className="ml-4 flex-shrink-0">
+                          <div className="ml-4 flex-shrink-0 flex items-center space-x-3">
                             <button
-                              type="button"
-                              onClick={() => removeFile(index)}
-                              className="font-medium text-red-600 hover:text-red-500 focus:outline-none focus:underline"
+                              onClick={() => handleUpload(file)}
+                              disabled={uploadStatus[file.name] === 'uploading' || uploadStatus[file.name] === 'success'}
+                              className={`inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
+                                uploadStatus[file.name] === 'uploading'
+                                  ? 'bg-indigo-400 cursor-not-allowed'
+                                  : uploadStatus[file.name] === 'success'
+                                  ? 'bg-green-600 cursor-not-allowed'
+                                  : uploadStatus[file.name] === 'failed'
+                                  ? 'bg-red-600 hover:bg-red-700'
+                                  : 'bg-indigo-600 hover:bg-indigo-700'
+                              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200`}
                             >
-                              <XMarkIcon className="h-5 w-5" />
+                              {uploadStatus[file.name] === 'uploading' ? (
+                                <span className="flex items-center">
+                                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  Uploading...
+                                </span>
+                              ) : uploadStatus[file.name] === 'success' ? (
+                                <span className="flex items-center">
+                                  <CheckCircleIcon className="h-4 w-4 mr-1" />
+                                  Uploaded
+                                </span>
+                              ) : uploadStatus[file.name] === 'failed' ? (
+                                'Retry Upload'
+                              ) : (
+                                'Upload'
+                              )}
                             </button>
+                            {uploadStatus[file.name] !== 'success' && (
+                              <button
+                                type="button"
+                                onClick={() => removeFile(index)}
+                                className="font-medium text-red-600 hover:text-red-500 focus:outline-none focus:underline"
+                              >
+                                <XMarkIcon className="h-5 w-5" />
+                              </button>
+                            )}
                           </div>
                         </li>
                       ))}
@@ -183,15 +229,9 @@ export default function UserDashboard() {
                     <div className="mt-6 flex justify-end">
                       <button
                         onClick={() => setSelectedFiles([])}
-                        className="mr-3 inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                       >
                         Clear all
-                      </button>
-                      <button
-                        onClick={handleUpload}
-                        className="inline-flex items-center px-5 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
-                      >
-                        Upload {selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''}
                       </button>
                     </div>
                   </div>

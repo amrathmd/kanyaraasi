@@ -23,13 +23,10 @@ export default function SignUp() {
 
     try {
       const response = await signUp(formData);
-      if (response.access_token) {
-        localStorage.setItem('token', response.access_token);
-        localStorage.setItem('role', response.role);
-        localStorage.setItem('userName', formData.name);
-        toast.success('Sign up successful!');
-        router.push('/dashboard/user');
-      }
+        toast.success('Sign up successful! Please login to continue.');
+        setTimeout(() => {
+          router.replace('/login');
+        }, 1000);
     } catch (error) {
       toast.error('Sign up failed. Please try again.');
     } finally {
