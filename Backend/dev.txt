@@ -26,3 +26,5 @@ starlette
 typing_extensions
 uvicorn
 WTForms
+boto3
+

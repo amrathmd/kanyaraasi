@@ -1,9 +1,17 @@
 # fastapi
 from fastapi import FastAPI
+from app.core.database import engine
 from app.core.modules import init_routers, make_middleware
+import app.models.user
+import app.models.document
+import app.models.document_status
+
 
 
 def create_app() -> FastAPI:
+    app.models.user.Base.metadata.create_all(bind=engine)
+    app.models.document.Base.metadata.create_all(bind=engine)
+    app.models.document_status.Base.metadata.create_all(bind=engine)
     app_ = FastAPI(
         title="kanyaraasi",
         description="Backend project to automate wellness claims",
