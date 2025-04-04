@@ -7,6 +7,9 @@ class MyUser(BaseModel):
 	email : str
 	password : str
 
+class User(MyUser):
+	id :str
+
 class Token(BaseModel):
 	access_token : str
 	token_type : str
