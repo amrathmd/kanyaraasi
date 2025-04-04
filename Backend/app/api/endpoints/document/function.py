@@ -5,7 +5,7 @@ from app.utils.s3_utils import AWS_REGION
 from sqlalchemy.orm import Session
 from app.models import document as DocumentModal
 
-AWS_REGION = "eu-north-1"
+AWS_REGION = "us-east-1"
 month_names = [
     "January", "February", "March", "April",
     "May", "June", "July", "August",
@@ -34,9 +34,10 @@ def generate_presigned_url(
         print(f"Error generating presigned URL: {e}")
         return None
 
-def create_document_inprogress(db :Session,document_id:str, user_id:str,year:str,month:str,email:str ):
+def create_document_inprogress(db :Session,document_id:str,extension:str, user_id:str,year:str,month:str,email:str ):
     document = DocumentModal.Document(
         document_id=document_id,
+        extension=extension,
         email=email,
         user_id=user_id,
         year=year,
@@ -48,10 +49,12 @@ def create_document_inprogress(db :Session,document_id:str, user_id:str,year:str
     db.refresh(document)
 
 def update_document_status_util(db: Session,document_id:str):
-    document = db.query(DocumentModal.Document).filter(DocumentModal.Document.document_id == document_id).first()
+    document: DocumentModal = db.query(DocumentModal.Document).filter(DocumentModal.Document.document_id == document_id).first()
     if document.status == DocumentStatus.INPROGRESS:
         document.status = DocumentStatus.UPLOADED
         db.commit()
         db.refresh(document)
         return True
 
+def get_document_by_id(db: Session,document_id:str):
+    return db.query(DocumentModal.Document).filter(DocumentModal.Document.document_id == document_id).first()

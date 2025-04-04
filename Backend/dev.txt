@@ -27,4 +27,7 @@ typing_extensions
 uvicorn
 WTForms
 boto3
-
+requests
+pillow
+tesseract
+pytesseract
