@@ -31,4 +31,55 @@ export const login = async (data: LoginRequest): Promise<LoginResponse> => {
   } catch (error) {
     throw error;
   }
+};
+
+interface PresignedUrlResponse {
+  document_code: string;
+  presigned_url: string;
+}
+
+export const getPresignedUrl = async (contentType: string): Promise<PresignedUrlResponse> => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await api.post('/documents/presigned-url', 
+      { content_type: contentType },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const updateDocumentStatus = async (documentCode: string): Promise<void> => {
+  try {
+    const token = localStorage.getItem('token');
+    await api.post(`/documents/update-document-status/${documentCode}`, {}, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const uploadToS3 = async (file: File, presignedUrl: string): Promise<void> => {
+  try {
+    // Use fetch instead of axios for S3 uploads to avoid CORS preflight issues
+    const response = await fetch(presignedUrl, {
+      method: 'PUT',
+      body: file,
+      headers: {
+        'Content-Type': file.type,
+      },
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('S3 upload error response:', errorText);
+      throw new Error(`Upload failed with status: ${response.status}`);
+    }
+  } catch (error) {
+    console.error('S3 upload error:', error);
+    throw error;
+  }
 }; 
