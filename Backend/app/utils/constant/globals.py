@@ -19,6 +19,7 @@ class Month(str, PythonEnum):
     DECEMBER = "december"
 
 class DocumentStatus(str, PythonEnum):
-    UPLOADED = "Uploaded"
-    APPROVED = "Approved"
-    REJECTED = "Rejected"
+    UPLOADED = "UPLOADED"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    INPROGRESS = "INPROGRESS"

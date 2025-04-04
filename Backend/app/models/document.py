@@ -8,10 +8,10 @@ class Document(Base):
     __tablename__ = "documents"
 
     user_id = Column(String, unique=True, index=True)
-    month = Column(Enum(Month))
-    year = Column(Integer)
+    month = Column(String)
+    year = Column(String)
     document_id = Column(String, primary_key=True)
-    s3_path = Column(String, unique=True)
     status = Column(Enum(DocumentStatus))
-    reason = Column(String)
-    deleted = Column(Boolean)
+    reason = Column(String,nullable=True)
+    deleted = Column(Boolean,default=False)
+    email = Column(String)
