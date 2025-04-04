@@ -11,18 +11,18 @@ from datetime import datetime
 
 
 from app.api.endpoints.document.function import get_month, generate_presigned_url, create_document_inprogress, \
-    update_document_status_util, get_document_by_id
+    update_document_status_util, get_document_by_id, get_current_month_docs, build_object_key
 from app.api.endpoints.user import functions as user_functions
 from app.core.dependencies import get_db
 from app.schemas.user import MyUser,User
-from app.schemas.document import GetPresignedUrl, SendPresignedUrl
+from app.schemas.document import GetPresignedUrl, SendPresignedUrl, GetDocuments, Document
 from app.utils.ocr import process_image
 from app.utils.s3_utils import upload_file_to_s3, download_file_from_s3
-
+bucket_name = "kanyaraasi-hugohub"
 document_module = APIRouter()
 @document_module.post("/presigned-url",response_model= SendPresignedUrl)
 async def get_presigned_url(current_user: Annotated[User, Depends(user_functions.get_current_user)],content_object : GetPresignedUrl,db: Session = Depends(get_db)) -> SendPresignedUrl:
-    bucket_name = "kanyaraasi-hugohub"
+
     print(current_user)
     year = str(datetime.now().year)
     month = get_month(datetime.now().month)
@@ -66,3 +66,26 @@ async def process_ocr(path, document_id, extension):
     download_file_from_s3(path, f"/Users/ajaychitumalla/Desktop/kanyaraasi/Backend/documents/{document_id}.{extension}")
 
     await process_image(document_id, extension)
+
+@document_module.get('/get-docs')
+async def get_documents_curr_month(current_user: Annotated[User, Depends(user_functions.get_current_user)],db : Session = Depends(get_db)):
+    documents = get_current_month_docs(db,current_user.id)
+    document_list = []
+    for document in documents:
+        reason = ""
+        if document.reason != None:
+            reason = document.reason
+        object_key = build_object_key(current_user.email,document_id=document.document_id,extension = document.extension)
+
+        url = generate_presigned_url(bucket_name=bucket_name,object_key=object_key,param_type="get_object")
+
+        document_list.append(Document(
+            document_id=document.document_id,
+            status=document.status,
+            year=document.year,
+            month=document.month,
+            reason=reason,
+            url=url
+        ))
+
+    return GetDocuments(documents=document_list)
