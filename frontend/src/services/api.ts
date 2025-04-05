@@ -82,4 +82,48 @@ export const uploadToS3 = async (file: File, presignedUrl: string): Promise<void
     console.error('S3 upload error:', error);
     throw error;
   }
+};
+
+interface Document {
+  status: string;
+  document_id: string;
+  year: string;
+  month: string;
+  reason: string;
+  url: string;
+}
+
+interface DocumentResponse {
+  documents: Document[];
+}
+
+export const getUserDocuments = async (): Promise<Document[]> => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await api.get('/documents/get-docs', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data.documents || [];
+  } catch (error) {
+    throw error;
+  }
+};
+
+interface AccountDetails {
+  user_id: string;
+  year: number;
+  total_balance: number;
+  available_balance: number;
+}
+
+export const getAccountDetails = async (): Promise<AccountDetails> => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await api.get('/account/account-details', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
 }; 

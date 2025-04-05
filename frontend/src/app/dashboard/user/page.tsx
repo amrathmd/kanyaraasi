@@ -4,8 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Document } from '@/types';
 import { toast } from 'react-hot-toast';
 import Header from '@/components/Header';
-import { DocumentIcon, ArrowUpTrayIcon, XMarkIcon, CheckCircleIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
-import { getPresignedUrl, updateDocumentStatus, uploadToS3 } from '@/services/api';
+import { DocumentIcon, ArrowUpTrayIcon, XMarkIcon, CheckCircleIcon, DocumentTextIcon, EyeIcon } from '@heroicons/react/24/outline';
+import { getPresignedUrl, updateDocumentStatus, uploadToS3, getUserDocuments, getAccountDetails } from '@/services/api';
 
 export default function UserDashboard() {
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -14,16 +14,57 @@ export default function UserDashboard() {
   const [userName, setUserName] = useState('User');
   const [balance, setBalance] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isBalanceLoading, setIsBalanceLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadingFiles, setUploadingFiles] = useState<{ [key: string]: boolean }>({});
   const [uploadStatus, setUploadStatus] = useState<{ [key: string]: 'idle' | 'uploading' | 'success' | 'failed' }>({});
 
   useEffect(() => {
     // In a real app, you would fetch the user's name and balance from an API
     const storedName = localStorage.getItem('userName') || 'User';
     setUserName(storedName);
-    setBalance(1000); // Example balance
+    
+    // Fetch account details
+    fetchAccountDetails();
   }, []);
+
+  const fetchAccountDetails = async () => {
+    try {
+      setIsBalanceLoading(true);
+      const accountDetails = await getAccountDetails();
+      setBalance(accountDetails.available_balance);
+    } catch (error) {
+      console.error('Error fetching account details:', error);
+      toast.error('Failed to fetch account details');
+    } finally {
+      setIsBalanceLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Fetch documents when the My Documents tab is selected
+    if (selectedTab === 1) {
+      fetchDocuments();
+    }
+  }, [selectedTab]);
+
+  const fetchDocuments = async () => {
+    try {
+      setIsLoading(true);
+      const userDocs = await getUserDocuments();
+      setDocuments(userDocs);
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      toast.error('Failed to fetch documents');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const viewDocument = (url: string) => {
+    // Open the document URL in a new tab
+    window.open(url, '_blank');
+  };
 
   const tabs = [
     { name: 'Upload Document', icon: ArrowUpTrayIcon },
@@ -110,6 +151,7 @@ export default function UserDashboard() {
         tabs={tabs}
         selectedTab={selectedTab}
         onTabChange={setSelectedTab}
+        isBalanceLoading={isBalanceLoading}
       />
       
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -255,7 +297,10 @@ export default function UserDashboard() {
                           Document Name
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Upload Date
+                          Year
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Month
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Status
@@ -266,50 +311,65 @@ export default function UserDashboard() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {documents.length > 0 ? (
+                      {isLoading ? (
+                        <tr>
+                          <td colSpan={5} className="px-6 py-4 text-center">
+                            <div className="flex justify-center items-center">
+                              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Loading documents...
+                            </div>
+                          </td>
+                        </tr>
+                      ) : documents.length > 0 ? (
                         documents.map((doc) => (
-                          <tr key={doc.id} className="hover:bg-gray-50 transition-colors duration-150">
+                          <tr key={doc.document_id} className="hover:bg-gray-50 transition-colors duration-150">
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center">
                                 <div className="flex-shrink-0 h-10 w-10 rounded-md bg-indigo-50 flex items-center justify-center">
                                   <DocumentTextIcon className="h-6 w-6 text-indigo-500" />
                                 </div>
                                 <div className="ml-3">
-                                  <p className="text-sm font-medium text-gray-900">{doc.name}</p>
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {doc.reason || `Document ${doc.document_id.substring(0, 8)}`}
+                                  </p>
                                 </div>
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {new Date(doc.uploadedAt).toLocaleDateString()}
+                              {doc.year}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {doc.month}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                Active
+                              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                doc.status === 'UPLOADED' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : doc.status === 'PENDING' 
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {doc.status}
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                              <button className="text-indigo-600 hover:text-indigo-900 mr-4 transition-colors duration-200">
-                                Download
-                              </button>
-                              <button className="text-red-600 hover:text-red-900 transition-colors duration-200">
-                                Delete
+                              <button
+                                onClick={() => viewDocument(doc.url)}
+                                className="text-indigo-600 hover:text-indigo-900 flex items-center justify-end ml-auto"
+                              >
+                                <EyeIcon className="h-5 w-5 mr-1" />
+                                View
                               </button>
                             </td>
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={4} className="px-6 py-12 text-center">
-                            <div className="mx-auto h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                              <DocumentIcon className="h-8 w-8 text-gray-400" />
-                            </div>
-                            <p className="text-sm text-gray-500 mb-4">No documents found. Upload your first document to get started.</p>
-                            <button 
-                              onClick={() => setSelectedTab(0)}
-                              className="inline-flex items-center px-5 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
-                            >
-                              Upload Document
-                            </button>
+                          <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
+                            No documents found. Upload your first document in the Upload Document tab.
                           </td>
                         </tr>
                       )}
