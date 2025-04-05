@@ -84,10 +84,10 @@ def get_current_month_docs(db:Session,user_id:str):
     ).all()
     return documents
 
-def get_current_month_all_user_docs(db:Session):
+def get_current_month_all_user_docs(db:Session, status:DocumentStatus):
     now = datetime.now()
     documents = db.query(DocumentModal.Document).filter(
-        DocumentModal.Document.status == DocumentStatus.UPLOADED,
+        DocumentModal.Document.status == status,
         extract('year', DocumentModal.Document.year == str(now.year)),
         extract('month',DocumentModal.Document.month == get_month(now.month))
     ).all()

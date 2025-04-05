@@ -24,3 +24,17 @@ class GetDocuments(BaseModel):
 class UpdateDocStatus(BaseModel):
     document_id: str
     status: DocumentStatus
+
+class DocumentDetails(BaseModel):
+    document_id: str
+    status: DocumentStatus
+    year: str
+    month: str
+    email: str
+    gst_number: str
+    total_amount: float
+    cgst_percent: float
+    sgst_percent: float
+
+class DocumentDetailsList(BaseModel):
+    documents: list[DocumentDetails]
