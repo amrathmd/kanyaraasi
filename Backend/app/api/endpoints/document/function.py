@@ -99,3 +99,15 @@ def mark_document_duplicate(db: Session,document_id:str):
     db.commit()
     db.refresh(document)
     return True
+
+def create_document_info(db :Session,document_id:str,gst_in:str, total_amount:str,cgst_percent:str,sgst_percent:str):
+    document = DocInfo.DocumentInfo(
+        document_id=document_id,
+        gst_in=gst_in,
+        total_amount=total_amount,
+        cgst_percent=cgst_percent,
+        sgst_percent=sgst_percent,
+    )
+    db.add(document)
+    db.commit()
+    db.refresh(document)
