@@ -31,3 +31,4 @@ requests
 pillow
 tesseract
 pytesseract
+google-generativeai
