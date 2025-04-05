@@ -16,6 +16,7 @@ from app.core.settings import SECRET_KEY, REFRESH_SECRET_KEY, ALGORITHM
 from app.core.settings import ACCESS_TOKEN_EXPIRE_MINUTES
 from app.core.dependencies import get_db, oauth2_scheme
 from app.utils.constant.globals import UserRole
+from app.models.account import Account
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -40,10 +41,20 @@ def get_user_by_id(db: Session, user_id: int):
 # crete new user 
 def create_new_user(db: Session, user: MyUser):
     hashed_password = pwd_context.hash(user.password)
-    new_user = UserModel.User(name=user.name, email=user.email, password=hashed_password, role= UserRole.USER, id = str(uuid.uuid4()))
+    id = str(uuid.uuid4())
+    new_user = UserModel.User(name=user.name, email=user.email, password=hashed_password, role= UserRole.USER, id = id)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    user_account = Account(
+        user_id = id,
+        total_balance = 40000.0,
+        available_balance = 40000.0,
+        year = str(datetime.now().year)
+    )
+    db.add(user_account)
+    db.commit()
+    db.refresh(user_account)
     return new_user
 
 
