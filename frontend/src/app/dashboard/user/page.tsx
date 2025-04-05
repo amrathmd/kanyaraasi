@@ -294,13 +294,16 @@ export default function UserDashboard() {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Document Name
+                          Document ID
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Year
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Month
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Reason
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Status
@@ -313,7 +316,7 @@ export default function UserDashboard() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {isLoading ? (
                         <tr>
-                          <td colSpan={5} className="px-6 py-4 text-center">
+                          <td colSpan={6} className="px-6 py-4 text-center">
                             <div className="flex justify-center items-center">
                               <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -333,7 +336,7 @@ export default function UserDashboard() {
                                 </div>
                                 <div className="ml-3">
                                   <p className="text-sm font-medium text-gray-900">
-                                    {doc.reason || `Document ${doc.document_id.substring(0, 8)}`}
+                                    {doc.document_id}
                                   </p>
                                 </div>
                               </div>
@@ -344,13 +347,18 @@ export default function UserDashboard() {
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {doc.month}
                             </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {doc.reason || '-'}
+                            </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                 doc.status === 'UPLOADED' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : doc.status === 'PENDING' 
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : 'bg-red-100 text-red-800'
+                                  ? 'bg-blue-100 text-blue-800' 
+                                  : doc.status === 'APPROVED'
+                                  ? 'bg-green-100 text-green-800'
+                                  : doc.status === 'REJECTED'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-yellow-100 text-yellow-800'
                               }`}>
                                 {doc.status}
                               </span>
@@ -368,7 +376,7 @@ export default function UserDashboard() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
+                          <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
                             No documents found. Upload your first document in the Upload Document tab.
                           </td>
                         </tr>

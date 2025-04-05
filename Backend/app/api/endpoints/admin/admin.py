@@ -126,7 +126,7 @@ async def update_document_status(updateDocStatus : UpdateDocStatus, current_user
 
     if document_info != None and document_details != None:
         account_balance = get_account_balance(db, document_details.user_id)
-        if account_balance:
+        if account_balance and account_balance["available_balance"] is not None:
             available_balance = account_balance["available_balance"]
             if available_balance < document_info.total_amount:
                 update_document_status_util(db, updateDocStatus.document_id, DocumentStatus.REJECTED)

@@ -126,4 +126,73 @@ export const getAccountDetails = async (): Promise<AccountDetails> => {
   } catch (error) {
     throw error;
   }
+};
+
+interface AdminDocument {
+  status: string;
+  document_id: string;
+  year: string;
+  month: string;
+  reason: string;
+  url: string;
+}
+
+interface AdminDocumentsResponse {
+  documents: AdminDocument[];
+}
+
+export const getAdminDocuments = async (): Promise<AdminDocumentsResponse> => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await api.get('/admin/get-all-docs', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+interface UpdateDocumentStatusRequest {
+  document_id: string;
+  status: 'APPROVED' | 'REJECTED';
+}
+
+export const updateAdminDocumentStatus = async (data: UpdateDocumentStatusRequest): Promise<void> => {
+  try {
+    const token = localStorage.getItem('token');
+    await api.post('/admin/update-status', data, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+interface ApprovedDocument {
+  document_id: string;
+  status: string;
+  year: string;
+  month: string;
+  email: string;
+  gst_number: string;
+  total_amount: number;
+  cgst_percent: number;
+  sgst_percent: number;
+}
+
+interface ApprovedDocumentsResponse {
+  documents: ApprovedDocument[];
+}
+
+export const getAdminApprovedDocuments = async (): Promise<ApprovedDocumentsResponse> => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await api.get('/admin/get-approved-docs', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
 }; 

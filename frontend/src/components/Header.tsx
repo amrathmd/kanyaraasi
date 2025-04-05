@@ -102,7 +102,7 @@ export default function Header({
                     <span className="text-lg font-semibold text-indigo-600">Loading...</span>
                   </div>
                 ) : (
-                  <p className="text-lg font-semibold text-indigo-600">${balance.toFixed(2)}</p>
+                  <p className="text-lg font-semibold text-indigo-600">₹{balance.toFixed(2)} INR</p>
                 )}
               </div>
             )}

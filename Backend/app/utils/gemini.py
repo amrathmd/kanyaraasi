@@ -1,8 +1,13 @@
 import google.generativeai as genai
 import json
+import re
+
+def to_snake_case(key):
+    key = re.sub(r'(?<=[a-z0-9])(?=[A-Z])', '_', key)  # insert _ before caps
+    return key.lower()
 
 def get_context(document_id, text):
-    genai.configure(api_key="AIzaSyBIfAJTVkptzaSDVxHPcS6P_eK4-xuNuM8")
+    genai.configure(api_key="AIzaSyBdEdHkb0VOOtoV1X0cRE0M1uV84XebQz4")
 
     model = genai.GenerativeModel('gemini-1.5-pro')
 
@@ -34,13 +39,15 @@ def get_context(document_id, text):
         middle_content = ""
 
     data = json.loads(middle_content)
+    data  = {to_snake_case(k): v for k, v in data.items()}
     print(data)
 
+
     # Accessing specific values:
-    gstin = data.get("GSTIN")
-    total_amount = data.get("Total_Amount")
-    cgst_percentage = data.get("CGST_Percentage")
-    sgst_percentage = data.get("SGST_Percentage")
+    gstin = data.get("gstin")
+    total_amount = data.get("total_amount")
+    cgst_percentage = data.get("cgst_percentage")
+    sgst_percentage = data.get("sgst_percentage")
 
     print(gstin)
     print(total_amount)

@@ -15,6 +15,8 @@ from app.api.endpoints.document.function import get_month, generate_presigned_ur
     update_document_status_util, get_document_by_id, get_current_month_docs, build_object_key, \
     mark_document_duplicate, get_document_details_by_gst_and_id, create_document_info
 
+from app.api.endpoints.account.function import get_account_balance
+
 update_document_status_util, get_document_by_id, build_object_key, \
     mark_document_duplicate
 from app.api.endpoints.user import functions as user_functions
@@ -80,8 +82,19 @@ def process_ocr(path, document_id, extension, db: Session ):
     print(response.get('sgst'))
     print(response.get('total'))
 
+    if response.get('gstin') is None or response.get('cgst') is None or response.get('sgst') is None or response.get('total') is None:
+        mark_document_duplicate(db, document_id, "Poor image quality, unable to process")
+        return
+
+    document = get_document_by_id(db, document_id)
+    account_balance = get_account_balance(db, document.user_id)
+    if account_balance and account_balance["available_balance"] is not None:
+        available_balance = account_balance["available_balance"]
+        if available_balance < response.get('total'):
+            mark_document_duplicate(db, document_id, "Not enough balance")
+
     if get_document_details_by_gst_and_id(db, response.get('gstin'), document_id):
-        mark_document_duplicate(db, document_id)
+        mark_document_duplicate(db, document_id, "Duplicate GST number found")
     else:
         create_document_info(db, document_id, response.get('gstin'), response.get('total'), response.get('cgst'), response.get('sgst'))
 

@@ -102,17 +102,17 @@ def build_object_key(email:str,document_id: str,extension:str) -> str:
 
 def get_document_details_by_gst_and_id(db: Session,gst_in:str, doc_id:str):
     document = (db.query(DocInfo.DocumentInfo).filter(DocInfo.DocumentInfo.gst_in == gst_in)
-                .filter(DocInfo.DocumentInfo.document_id == doc_id)
+                .filter(DocInfo.DocumentInfo.document_id != doc_id)
                 .first())
 
     if not document:
         return False
     return True
 
-def mark_document_duplicate(db: Session,document_id:str):
+def mark_document_duplicate(db: Session,document_id:str, reason: str):
     document: DocumentModal = db.query(DocumentModal.Document).filter(DocumentModal.Document.document_id == document_id).first()
     document.status = DocumentStatus.REJECTED
-    document.reason = "Duplicate GSI number found"
+    document.reason = reason
     db.commit()
     db.refresh(document)
     return True
