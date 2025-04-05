@@ -82,4 +82,25 @@ export const uploadToS3 = async (file: File, presignedUrl: string): Promise<void
     console.error('S3 upload error:', error);
     throw error;
   }
+};
+
+interface Document {
+  status: string;
+  document_id: string;
+  year: string;
+  month: string;
+  reason: string;
+  url: string;
+}
+
+export const getUserDocuments = async (): Promise<Document[]> => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await api.get('/documents/get-docs', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
 }; 

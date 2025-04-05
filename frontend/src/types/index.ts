@@ -16,9 +16,10 @@ export interface LoginResponse {
 }
 
 export interface Document {
-  id: string;
-  name: string;
-  uploadedAt: string;
-  userId: string;
-  userName: string;
+  document_id: string;
+  status: string;
+  year: string;
+  month: string;
+  reason: string;
+  url: string;
 } 
