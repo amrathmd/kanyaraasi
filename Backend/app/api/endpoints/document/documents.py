@@ -1,6 +1,7 @@
 # fastapi
 import uuid
 import asyncio
+import os
 
 from fastapi import APIRouter, Depends, HTTPException
 from typing import Annotated
@@ -11,8 +12,8 @@ from datetime import datetime
 
 
 from app.api.endpoints.document.function import get_month, generate_presigned_url, create_document_inprogress, \
-    update_document_status_util, get_document_by_id, build_object_key, get_document_details_by_gst, \
-    mark_document_duplicate, create_document_info
+    update_document_status_util, get_document_by_id, build_object_key, \
+    mark_document_duplicate, create_document_info, get_document_details_by_gst_and_id
 from app.api.endpoints.user import functions as user_functions
 from app.core.dependencies import get_db
 from app.schemas.user import MyUser,User
@@ -64,7 +65,9 @@ def update_document_status(current_user: Annotated[User, Depends(user_functions.
     }
 
 def process_ocr(path, document_id, extension, db: Session ):
-    download_file_from_s3(path, f"/Users/ajaychitumalla/Desktop/kanyaraasi/Backend/documents/{document_id}.{extension}")
+    current_working_directory = os.getcwd()
+
+    download_file_from_s3(path, f"{current_working_directory}/{document_id}.{extension}")
 
     response = asyncio.run(process_image(document_id, extension))
 
@@ -73,7 +76,7 @@ def process_ocr(path, document_id, extension, db: Session ):
     print(response.get('sgst'))
     print(response.get('total'))
 
-    if get_document_details_by_gst(db, response.get('gstin')):
+    if get_document_details_by_gst_and_id(db, response.get('gstin'), document_id):
         mark_document_duplicate(db, document_id)
     else:
         create_document_info(db, document_id, response.get('gstin'), response.get('total'), response.get('cgst'), response.get('sgst'))

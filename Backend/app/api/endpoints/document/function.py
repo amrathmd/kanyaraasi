@@ -85,8 +85,10 @@ def build_object_key(email:str,document_id: str,extension:str) -> str:
 
     return  f"{year}/{month}/{email}/{document_id}.{extension}"
 
-def get_document_details_by_gst(db: Session,gst_in:str):
-    document = db.query(DocInfo.DocumentInfo).filter(DocInfo.DocumentInfo.gst_in == gst_in).first()
+def get_document_details_by_gst_and_id(db: Session,gst_in:str, doc_id:str):
+    document = (db.query(DocInfo.DocumentInfo).filter(DocInfo.DocumentInfo.gst_in == gst_in)
+                .filter(DocInfo.DocumentInfo.document_id == doc_id)
+                .first())
 
     if not document:
         return False
