@@ -57,16 +57,22 @@ def create_document_inprogress(db :Session,document_id:str,extension:str, user_i
     db.commit()
     db.refresh(document)
 
-def update_document_status_util(db: Session,document_id:str):
+def update_document_status_util(db: Session,document_id:str, status: DocumentStatus):
     document: DocumentModal = db.query(DocumentModal.Document).filter(DocumentModal.Document.document_id == document_id).first()
     if document.status == DocumentStatus.INPROGRESS:
         document.status = DocumentStatus.UPLOADED
         db.commit()
         db.refresh(document)
         return True
+    else:
+        document.status = status
+        db.commit()
+        db.refresh(document)
+        return True
 
 def get_document_by_id(db: Session,document_id:str):
-    return db.query(DocumentModal.Document).filter(DocumentModal.Document.document_id == document_id).first()
+    res:DocumentModal.Document = db.query(DocumentModal.Document).filter(DocumentModal.Document.document_id == document_id).first()
+    return res;
 
 def get_current_month_docs(db:Session,user_id:str):
     now = datetime.now()
@@ -75,6 +81,15 @@ def get_current_month_docs(db:Session,user_id:str):
         extract('year', DocumentModal.Document.year == str(now.year)),
         extract('month',DocumentModal.Document.month == get_month(now.month))
         # extract('status' , DocumentModal.Document.status != DocumentStatus.INPROGRESS)
+    ).all()
+    return documents
+
+def get_current_month_all_user_docs(db:Session):
+    now = datetime.now()
+    documents = db.query(DocumentModal.Document).filter(
+        DocumentModal.Document.status == DocumentStatus.UPLOADED,
+        extract('year', DocumentModal.Document.year == str(now.year)),
+        extract('month',DocumentModal.Document.month == get_month(now.month))
     ).all()
     return documents
 
@@ -101,6 +116,12 @@ def mark_document_duplicate(db: Session,document_id:str):
     db.commit()
     db.refresh(document)
     return True
+
+def get_document_info_by_id(db: Session, doc_id: str):
+    d:DocInfo.DocumentInfo = db.query(DocInfo.DocumentInfo).filter(DocInfo.DocumentInfo.document_id == doc_id).first()
+    if d is not None:
+        return d
+    return None
 
 def create_document_info(db :Session,document_id:str,gst_in:str, total_amount:str,cgst_percent:str,sgst_percent:str):
     document = DocInfo.DocumentInfo(

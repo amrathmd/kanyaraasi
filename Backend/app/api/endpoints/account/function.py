@@ -4,10 +4,8 @@ from fastapi import Depends, HTTPException
 
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_db
-from app.schemas.account import AccountUpdate
 from app.models.account import Account
 from sqlalchemy import update
-from app.models.user.user import user as UserModal
 
 AWS_REGION = "us-east-1"
 

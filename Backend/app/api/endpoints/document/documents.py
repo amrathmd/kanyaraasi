@@ -12,12 +12,16 @@ from datetime import datetime
 
 
 from app.api.endpoints.document.function import get_month, generate_presigned_url, create_document_inprogress, \
-    update_document_status_util, get_document_by_id, build_object_key, \
-    mark_document_duplicate, create_document_info, get_document_details_by_gst_and_id
+    update_document_status_util, get_document_by_id, get_current_month_docs, build_object_key, \
+    mark_document_duplicate, get_document_details_by_gst_and_id, create_document_info
+
+update_document_status_util, get_document_by_id, build_object_key, \
+    mark_document_duplicate
 from app.api.endpoints.user import functions as user_functions
 from app.core.dependencies import get_db
 from app.schemas.user import MyUser,User
 from app.schemas.document import GetPresignedUrl, SendPresignedUrl, GetDocuments, Document
+from app.utils.constant.globals import DocumentStatus
 from app.utils.ocr import process_image
 from app.utils.s3_utils import upload_file_to_s3, download_file_from_s3
 bucket_name = "kanyaraasi-hugohub"
@@ -48,7 +52,7 @@ async def get_presigned_url(current_user: Annotated[User, Depends(user_functions
 
 @document_module.post('/update-document-status/{document_id}')
 def update_document_status(current_user: Annotated[User, Depends(user_functions.get_current_user)], document_id: str, db: Session = Depends(get_db)):
-    update_document_status_util(db,document_id)
+    update_document_status_util(db,document_id, DocumentStatus.UPLOADED)
 
     document = get_document_by_id(db, document_id)
 
@@ -84,6 +88,7 @@ def process_ocr(path, document_id, extension, db: Session ):
 
 @document_module.get('/get-docs')
 async def get_documents_curr_month(current_user: Annotated[User, Depends(user_functions.get_current_user)],db : Session = Depends(get_db)):
+
     documents = get_current_month_docs(db,current_user.id)
     document_list = []
     for document in documents:

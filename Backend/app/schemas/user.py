@@ -14,6 +14,7 @@ class MyUser(BaseModel):
 
 class User(MyUser):
 	id :str
+	role: UserRole
 
 class Token(BaseModel):
 	access_token : str
