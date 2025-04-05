@@ -2,6 +2,7 @@ from datetime import datetime
 
 import boto3
 
+from app.models import document_info as DocInfo
 from app.utils.constant.globals import DocumentStatus
 from app.utils.s3_utils import AWS_REGION
 from sqlalchemy.orm import Session
@@ -83,3 +84,18 @@ def build_object_key(email:str,document_id: str,extension:str) -> str:
 
 
     return  f"{year}/{month}/{email}/{document_id}.{extension}"
+
+def get_document_details_by_gst(db: Session,gst_in:str):
+    document = db.query(DocInfo.DocumentInfo).filter(DocInfo.DocumentInfo.gst_in == gst_in).first()
+
+    if not document:
+        return False
+    return True
+
+def mark_document_duplicate(db: Session,document_id:str):
+    document: DocumentModal = db.query(DocumentModal.Document).filter(DocumentModal.Document.document_id == document_id).first()
+    document.status = DocumentStatus.REJECTED
+    document.reason = "Duplicate GSI number found"
+    db.commit()
+    db.refresh(document)
+    return True
