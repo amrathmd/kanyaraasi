@@ -5,7 +5,7 @@ import { Document } from '@/types';
 import { toast } from 'react-hot-toast';
 import Header from '@/components/Header';
 import { DocumentIcon, ArrowUpTrayIcon, XMarkIcon, CheckCircleIcon, DocumentTextIcon, EyeIcon } from '@heroicons/react/24/outline';
-import { getPresignedUrl, updateDocumentStatus, uploadToS3, getUserDocuments } from '@/services/api';
+import { getPresignedUrl, updateDocumentStatus, uploadToS3, getUserDocuments, getAccountDetails } from '@/services/api';
 
 export default function UserDashboard() {
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -15,6 +15,7 @@ export default function UserDashboard() {
   const [balance, setBalance] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isBalanceLoading, setIsBalanceLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadStatus, setUploadStatus] = useState<{ [key: string]: 'idle' | 'uploading' | 'success' | 'failed' }>({});
 
@@ -22,8 +23,23 @@ export default function UserDashboard() {
     // In a real app, you would fetch the user's name and balance from an API
     const storedName = localStorage.getItem('userName') || 'User';
     setUserName(storedName);
-    setBalance(1000); // Example balance
+    
+    // Fetch account details
+    fetchAccountDetails();
   }, []);
+
+  const fetchAccountDetails = async () => {
+    try {
+      setIsBalanceLoading(true);
+      const accountDetails = await getAccountDetails();
+      setBalance(accountDetails.available_balance);
+    } catch (error) {
+      console.error('Error fetching account details:', error);
+      toast.error('Failed to fetch account details');
+    } finally {
+      setIsBalanceLoading(false);
+    }
+  };
 
   useEffect(() => {
     // Fetch documents when the My Documents tab is selected
@@ -135,6 +151,7 @@ export default function UserDashboard() {
         tabs={tabs}
         selectedTab={selectedTab}
         onTabChange={setSelectedTab}
+        isBalanceLoading={isBalanceLoading}
       />
       
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -315,7 +332,9 @@ export default function UserDashboard() {
                                   <DocumentTextIcon className="h-6 w-6 text-indigo-500" />
                                 </div>
                                 <div className="ml-3">
-                                  <p className="text-sm font-medium text-gray-900">{doc.reason}</p>
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {doc.reason || `Document ${doc.document_id.substring(0, 8)}`}
+                                  </p>
                                 </div>
                               </div>
                             </td>
@@ -327,9 +346,9 @@ export default function UserDashboard() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                doc.status === 'Active' 
+                                doc.status === 'UPLOADED' 
                                   ? 'bg-green-100 text-green-800' 
-                                  : doc.status === 'Pending' 
+                                  : doc.status === 'PENDING' 
                                   ? 'bg-yellow-100 text-yellow-800'
                                   : 'bg-red-100 text-red-800'
                               }`}>
