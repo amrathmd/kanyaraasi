@@ -12,7 +12,7 @@ import app.models.document_info
 def create_app() -> FastAPI:
     app.models.user.Base.metadata.create_all(bind=engine)
     app.models.document.Base.metadata.create_all(bind=engine)
-    app.models.document_status.Base.metadata.create_all(bind=engine)
+    app.models.document_info.Base.metadata.create_all(bind=engine)
     app.models.account.Base.metadata.create_all(bind=engine)
     app.models.document_info.Base.metadata.create_all(bind=engine)
     app_ = FastAPI(

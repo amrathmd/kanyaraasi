@@ -20,3 +20,7 @@ class Document(BaseModel):
 
 class GetDocuments(BaseModel):
     documents : list[Document]
+
+class UpdateDocStatus(BaseModel):
+    document_id: str
+    status: DocumentStatus
