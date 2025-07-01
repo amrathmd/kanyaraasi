@@ -5,10 +5,24 @@ from sqlalchemy import pool
 
 from alembic import context
 
+# Import the Base from your application's database core.
+# This Base object should have all your SQLAlchemy models registered with it.
 from app.core.database import Base
-from app.models.user import User, metadata
-from app.models.document import Document
-# this is the Alembic Config object, which provides
+
+# To ensure Alembic's autogenerate feature can detect all model changes,
+# import all your model modules here. This registers them with Base.metadata.
+# If your models are structured within a package (e.g., app.models) and
+# app.models.__init__.py imports all individual model files, then
+# importing just app.models might be sufficient.
+# However, explicit imports are safer for clarity.
+import app.models.user          # Contains User model
+import app.models.account       # Contains Account model
+import app.models.document      # Contains Document model
+import app.models.document_info # Contains DocumentInfo model
+# Add any other model files from your application here, e.g.:
+# import app.models.admin_specific_tables
+
+# This is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 
@@ -17,11 +31,9 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-
+# target_metadata should point to your SQLAlchemy models' MetaData object.
+# This is used by Alembic's 'autogenerate' feature to compare the database
+# schema against your models and generate migration scripts.
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
